@@ -1,0 +1,13 @@
+Package: shy
+Type: Package
+Title: Stochastic Hydrology
+Version: 0.0.0.9000
+Authors@R: c(
+    person("Hung", "Nguyen", email = "ntthung@gmail.com", role = c("aut", "cre"))
+    )
+Description: Utility functions for stochastic hydrological analyses
+License: What license is it under?
+Encoding: UTF-8
+LazyData: true
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 6.1.1
