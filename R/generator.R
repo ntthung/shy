@@ -1,149 +1,101 @@
-# source('init.R')
-# source('read_Q.R')
-#
-# horizon <- 1967:2014 # One extra year for lags
-# n.reps  <- 100
-# n.years <- length(horizon)
-#
-#
-# Q %<>%
-#     mutate(cms_log = log(cms)) %>%
-#     group_by(month) %>%
-#     mutate(mm = mean(cms_log), msd = sd(cms_log)) %>%
-#     mutate(cms_std = (cms_log - mm) / msd)
-#
-# # Umiray monthly mean
-# QU.mm <- QU %>%
-#     group_by(month) %>%
-#     summarise(mm = mean(cms)) %>%
-#     .$mm
-#
-# Q %<>%
-#     group_by(year) %>%
-#     mutate(cms_wU = cms + QU.mm) %>%
-#     ungroup()
-#
-# Q.mm <- Q %>%
-#     group_by(month) %>%
-#     summarise(mm = mean(cms_wU))
-#
-# seasons <- Q.mm %>%
-#     mutate(season = (mm - min(mm)) / (max(mm) - min(mm))) %>%
-#     .$season %>%
-#     rep(n.years-1)
-#
-# Q.norm.val <- 2*max(Q$cms) + max(QU.mm)
-#
-# nino.C.full <- read.csv('01_Data/oni_index.csv') %>%
-#     gather(key = 'month', value = 'anom', 2:13) %>%
-#     group_by(year) %>%
-#     mutate(month = 1:12) %>%
-#     ungroup() %>%
-#     arrange(year)
-#
-# nino.C  <- filter(nino.C.full, year %in% horizon)
-#
-# # Calculate average of previous 4 months
-# avg4 <- function(x) c(rep(0,4), sapply(5:length(x), function(i) mean(x[(i-4):(i-1)])))
-# nino.C %<>% mutate(anom_rm = avg4(anom))
-#
-# one_enso_rep <- function(n.years) {
-#     # Function to create one replicate using equation (4) in Burgers (1999)
-#
-#     # Parameters reported by Burgers (1999)
-#     a  <- 0.94
-#     b  <- 0.13
-#     k  <- 0.86
-#     ve <- 0.24 # variance of epsilon
-#
-#     n.months <- n.years * 12
-#     epsilon  <- rnorm(n.months, 0, sqrt(ve)) # white noise
-#     x    <- rep(0, n.months)
-#     x[1] <- rnorm(1, 0, sqrt(ve))   # x0 = 0, x1 = epsilon0
-#     x[2] <- 2*a*x[1] + epsilon[1] - k*x[1]
-#
-#     for (i in 2:(n.months - 1)){
-#         x[i+1] <- 2*a*x[i] - (a^2 + b^2)*x[i-1] + epsilon[i] - k*epsilon[i-1]
-#     }
-#
-#     return(x)
-# }
-#
-# replicator <- function(n.reps, n.years, var.cor = TRUE) {
-#
-#     set.seed(100)
-#     enso_reps_mat <- replicate(n.reps, one_enso_rep(n.years))
-#
-#     if (var.cor) {
-#         nino.hist.sd <- sd(nino.C$anom)
-#         nino.rep.sd <- sd(c(enso_reps_mat))
-#         enso_reps_mat <- enso_reps_mat / nino.rep.sd * nino.hist.sd
-#     } else {
-#         norm_val <- 2*max(abs(nino.C$anom))
-#         enso_reps_mat[which(enso_reps_mat >  norm.val)] <-  norm.val
-#         enso_reps_mat[which(enso_reps_mat < -norm.val)] <- -norm.val
-#     }
-#
-#     enso_reps <-
-#         enso_reps_mat %>%
-#         data.frame() %>%
-#         mutate(year = nino.C$year, month = nino.C$month) %>%
-#         gather(key = 'reps', value = 'anom', 1:n.reps, factor_key = TRUE)
-#
-#     # Standardize ENSO: substract mean and divide standard deviation
-#     nino.C %<>%
-#         group_by(month) %>%
-#         mutate(anom_std = (anom - mean(anom))/ sd(anom)) %>%
-#         ungroup()
-#
-#     # Standardize the ENSO replicates
-#     enso_reps_mat_std <-
-#         enso_reps %>%
-#         group_by(reps, month) %>%
-#         mutate(anom_std = (anom - mean(anom)) / sd(anom)) %>%
-#         select(-anom) %>%
-#         spread(reps, anom_std) %>%
-#         ungroup() %>%
-#         select(-year, -month)
-#
-#     # Fit lag4 ARMAX
-#     armax4.fit <- Arima(ts(Q$cms_std, frequency = 12, start = c(1968,1)),
-#                         order = c(1,0,1),
-#                         xreg = nino.C$anom_std[9:(nrow(nino.C)-4)])  # Lag 4 is here
-#
-#     set.seed(11)
-#     Q.sim <- apply(enso_reps_mat_std, 2,
-#                    function(x) simulate(object = armax4.fit, xreg = x))
-#
-#     Qm.armax4 <- data.frame(Q.sim) %>%
-#         mutate(year = nino.C$year, month = nino.C$month) %>%
-#         gather(key = reps, value = cms_std, 1:n.reps, factor_key = TRUE) %>%
-#         group_by(reps) %>%
-#         mutate(mm = c(Q$mm[1:12], Q$mm),
-#                msd = c(Q$msd[1:12], Q$msd),
-#                cms = exp(cms_std * msd + mm)) %>%
-#         ungroup()
-#
-#     # Trim
-#     which(Qm.armax4$cms > 2*max(Q$cms))
-#
-#     Qm.armax4 %<>%
-#         mutate(cms = replace(cms, which(cms > 2*max(Q$cms)), 2*max(Q$cms)))
-#
-#     all_reps <- inner_join(enso_reps, Qm.armax4, by = c('year', 'month', 'reps'))
-#
-#     # Add Umiray
-#     all_reps %<>%
-#         group_by(reps, year) %>%
-#         mutate(cms_wU = cms + QU.mm) %>%
-#         ungroup() %>%
-#         group_by(reps) %>%
-#         mutate(anom_rm = avg4(anom)) %>%
-#         ungroup()
-#
-#     return(all_reps)
-# }
-#
+#' ONI replicate
+#'
+#' Create one replicate of ONI time series using equation (4) in Burgers (1999) and parameter values reported in the same paper.
+#' @inheritParams ONI_rep
+#' @return A vector of the ONI time series.
+#' @export
+one_ONI_rep <- function(num.years) {
+
+    a  <- 0.94
+    b  <- 0.13
+    k  <- 0.86
+    ve <- 0.24 # variance of epsilon
+
+    num.months <- num.years * 12
+    epsilon  <- rnorm(num.months, 0, sqrt(ve)) # white noise
+    x    <- rep(0, num.months)
+    x[1] <- rnorm(1, 0, sqrt(ve))   # x0 = 0, x1 = epsilon0
+    x[2] <- 2*a*x[1] + epsilon[1] - k*x[1]
+
+    for (i in 2:(num.months - 1)){
+        x[i+1] <- 2*a*x[i] - (a^2 + b^2)*x[i-1] + epsilon[i] - k*epsilon[i-1]
+    }
+
+    x
+}
+
+#' ONI replicates
+#'
+#' Generate multiple stochastic replicates of ONI time series according to Burgers (1999).
+#' @param ONI.obs A data frame of observed ONI with three columns (year, month, ONI). By default, the replicates will have the same years as ONI.obs, unless `years` is provided.
+#' @param years If provided, the replicates will have these years.
+#' @param num.reps Number of replicates to be generated. Default is 100.
+#' @param var.cor Whether variance correction is performed. Setting `var.cor = TRUE` will ignore `trim`.
+#' @param trim Used to cut off values that are too high or too low. Values that are more than `trim * max(abs(obs))` will be set to `max(abs(obs))`. Default is 2. Supply `trim = NULL` if you don't want trimming.
+#' @return A data.table of 4 columns (rep, year, month, ONI).
+#' @export
+ONI_reps <- function(ONI.obs, years = NULL, num.reps = 100, trim = 2, var.cor = FALSE) {
+
+    if (is.null(years)) years <- unique(ONI.obs$year)
+    num.years <- length(years)
+    # This returns a matrix, one row for each time step, one column for each replicate
+    reps <- replicate(num.reps, one_ONI_rep(num.years))
+    # Trim or variance correction if necessary
+    if (var.cor) {
+        hist.sd <- sd(ONI.obs$ONI)
+        rep.sd <- sd(c(reps))
+        reps <- reps / rep.sd * hist.sd
+    } else if (!is.null(trim)) {
+        norm.val <- trim * max(abs(ONI.obs$ONI))
+        reps[which(reps >  norm.val)] <-  norm.val
+        reps[which(reps < -norm.val)] <- -norm.val
+    }
+
+    data.table(rep = rep(1:num.reps, each = 12*num.years),
+               year = rep(years, each = 12),
+               month = rep(1:12, times = num.reps),
+               ONI = c(reps))
+}
+
+#' Streamflow replicates with ARMAX
+#'
+#' Generate stochastic replicates of streamflow with the ARMAX model. If exogneous inputs are not provided then the ARMA model will be used.
+#' @param ONI.obs A data frame of observed streamflow with three columns (year, month, Q). By default, the replicates will have the same years as Q.obs, unless `years` is provided.
+#' @inheritParams ONI_reps
+#' @param model A time series model, e.g., that generated by `forecast::Arima()`.
+#' @param X Exogeneous input, a data.table with 4 columns (rep, year, month, X). If there are more than 4 columns, the desirable column name to be used as exogenous input should be given in `X.name`; otherwise the function will take the 4th column by default. If provided, `num.reps` will be ignored.
+#' @export
+Q_ARMAX <- function(Q.obs, model, X = NULL, X.name = NULL,
+                    years = NULL, num.reps = 100, trim = 2, trans = 'log') {
+
+    if (is.null(X)) { # ARMA
+        if (is.null(years)) years <- Q.obs[, year]
+        num.years <- length(years)
+        ans <- rbindlist(
+            lapply(1:num.reps, function(k)
+                data.table(rep = k,
+                           year = years,
+                           month = rep(1:12, num.years),
+                           Q = as.vector(simulate(model, n = num.years))
+                           )
+                )
+            )
+    }
+    else { # ARMAX
+        if (is.null(X.name)) X.name <- colnames(X)[4]
+        X <- copy(X)
+        setnames(X, old = X.name, new = 'X')
+        ans <- copy(X)[, Q := as.vector(simulate(model, xreg = X)), by = rep]
+    }
+    if (trans == 'log') ans[, Q := exp(Q)]
+    if (!is.null(trim)) ans[Q > trim * max(Q.obs$Q), Q := trim * max(Q.obs$Q)]
+    ans[]
+}
+
+
+## @param Q.other Other flow processes not modelled by `model`, for example, diversion from another catchment. This will be added to the replicates. Must have the same structure as `Q.obs`.
+
+
 # write.reps <- function(all_reps, path, norm_val) {
 #
 #     # Write only ENSO reps for classification
