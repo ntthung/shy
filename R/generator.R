@@ -1,7 +1,7 @@
 #' ONI replicate
 #'
 #' Create one replicate of ONI time series using equation (4) in Burgers (1999) and parameter values reported in the same paper.
-#' @inheritParams ONI_reps
+#' @param num.years Number of years to simulate.
 #' @return A vector of the ONI time series.
 #' @export
 one_ONI_rep <- function(num.years) {
@@ -39,7 +39,7 @@ ONI_reps <- function(ONI.obs, years = NULL, num.reps = 100, trim = 2, var.cor = 
     if (is.null(years)) years <- unique(ONI.obs$year)
     num.years <- length(years)
     # This returns a matrix, one row for each time step, one column for each replicate
-    reps <- replicate(num.reps, one_ONI_rep(num.years))
+    reps <- stats::replicate(num.reps, one_ONI_rep(num.years))
     # Trim or variance correction if necessary
     if (var.cor) {
         hist.sd <- sd(ONI.obs$ONI)
@@ -76,7 +76,7 @@ ONI_reps <- function(ONI.obs, years = NULL, num.reps = 100, trim = 2, var.cor = 
 #'     \item{std}{Standardization: substracting monthly mean and dividing by monthly standard deviation.}
 #'     \item{log-std}{First take log-transform, then do standardization.}
 #' }
-#' @param X.trans Same as `Q.trans` but applied on `X.obs`.
+#' @param X.trans Same as `Q.trans` but applied on `X.obs` and `X.reps`.
 #' @return A data.table with the following collumns: year, month, X (if `method == 'armax'`) and Q.
 #' @details First, an ARMA or ARMAX model will be fitted using the overlapping period of `Q.obs` and `X.obs`. Then, an ARMA model will be fitted using `forecast::Arima`. Finally, stochastic time series will be generated using `stats::simulate`.
 #' @export
@@ -98,7 +98,7 @@ Q_reps <- function(Q.obs, method, order,
         Q.sim <- data.table(rep = rep(1:num.reps, each = 12*num.years),
                             year = rep(years, each = 12) %>% rep(num.reps),
                             month = rep(1:12, num.reps),
-                            Qsim = c(replicate(num.reps, as.numeric(simulate(model))))) %>%
+                            Qsim = c(replicate(num.reps, as.numeric(stats::simulate(model))))) %>%
             merge(Q, by = c('year', 'month'))
     } else if (method == 'armax') {
         X <- copy(X.obs)
@@ -112,7 +112,7 @@ Q_reps <- function(Q.obs, method, order,
         }
         dt <- merge(Q, X[, .(year, month, X = shift(X, X.lag))], by = c('year', 'month'))
         model <- forecast::Arima(dt[, Q3], order = order, xreg = dt[, X])
-        X.reps[year %in% dt[, year], Qsim := as.numeric(simulate(model, xreg = X)), by = rep][, X := NULL]
+        X.reps[year %in% dt[, year], Qsim := as.numeric(stats::simulate(model, xreg = X)), by = rep][, X := NULL]
         Q.sim <- merge(X.reps, Q, by = c('year', 'month'), all.X = TRUE)
 
     } else warning("Only arma and armax methods are supported at the moment.")
@@ -129,50 +129,3 @@ Q_reps <- function(Q.obs, method, order,
     Q.sim[]
 
 }
-
-## @param Q.other Other flow processes not modelled by `model`, for example, diversion from another catchment. This will be added to the replicates. Must have the same structure as `Q.obs`.
-
-
-# write.reps <- function(all_reps, path, norm_val) {
-#
-#     # Write only ENSO reps for classification
-#     lapply(unique(all_reps$reps),
-#            function(x) {
-#                case <- filter(all_reps, reps == x) %>%
-#                    select(year, month, anom)
-#                write.csv(case, file = paste0(path, 'ENSO_', x, '.csv'), row.names = FALSE)
-#            }
-#     )
-#     # Write the reps in Christoph's template
-#     lapply(unique(all_reps$reps),  # For each reps
-#            function(x) {
-#                case   <- filter(all_reps, reps == x) # Select current rep
-#                Q_lag1 <- lag(case$cms_wU)[-(1:12)]    # Shift Q back by 1 month, omit first year (1967)
-#                case %>%
-#                    filter(year >= 1968) %>%   # Remove 1967
-#                    mutate(day = 1,
-#                           hour = 0,
-#                           min = 0,
-#                           Q = cms_wU,
-#                           seasonal = seasons,
-#                           ENSO_4avg_normalized = (anom_rm + norm_val) / (2*norm_val),
-#                           Inflow_norm = Q_lag1 / Q.norm.val) %>%
-#                    select(year, month, day, hour, min, Q, seasonal, ENSO_4avg_normalized, Inflow_norm) %>%
-#                    round(2) %>%
-#                    write.csv(file = paste0(path, x,'.csv'), row.names = FALSE)
-#            }
-#     )
-# }
-#
-# reps.withVC <- replicator(n.reps, n.years, var.cor = TRUE)
-# norm.val.VC <- max(c(max(abs(reps.withVC$anom)), max(abs(nino.C$anom))))
-# #write.reps(reps.withVC, path = 'Output/New_reps_VC/', norm_val = norm.val.VC)
-#
-# ggplot() +
-#     geom_line(data = reps.withVC, aes(year + month/12, anom, group = reps), colour = 'grey') +
-#     geom_line(data = nino.C, aes(year + month/12, anom), colour = 'black')
-#
-# ggplot() +
-#     geom_line(data = reps.withVC, aes(year + month/12, cms, group = reps), colour = 'grey') +
-#     geom_line(data = Q, aes(year + month/12, cms), colour = 'black')
-#

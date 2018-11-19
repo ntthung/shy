@@ -8,6 +8,14 @@
 \description{
 Utility functions for stochastic hydrological analyses
 }
+\seealso{
+Useful links:
+\itemize{
+  \item \url{https://github.com/ntthung/shy}
+  \item Report bugs at \url{https://github.com/ntthung/shy/issues}
+}
+
+}
 \author{
 \strong{Maintainer}: Hung Nguyen \email{ntthung@gmail.com}
 

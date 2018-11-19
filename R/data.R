@@ -6,7 +6,7 @@
 #'     \item{month}{A factor with 12 levels from Jan to Dec. Each month is the average of 3 consecutive months, i.e, Jan denotes DJF average}
 #'     \item{ONI}{Oceanic ENSO Index}
 #' }
-#' @source NOAA [http://origin.cpc.ncep.noaa.gov/products/analysis_monitoring/ensostuff/ONI_v5.php]
+#' @source NOAA \url{http://origin.cpc.ncep.noaa.gov/products/analysis_monitoring/ensostuff/ONI_v5.php}
 'ONI'
 
 #' Angat Reservoir inflow
@@ -18,5 +18,5 @@
 #'     \item{month}{A factor with 12 levels from Jan to Dec}
 #'     \item{Q}{Inflow to the reservoir in cubic meter per second}
 #' }
-#' @source [http://202.90.134.59/riverflow/01_avg30yr.aspx]
+#' @source \url{http://202.90.134.59/riverflow/01_avg30yr.aspx}
 'Angat'

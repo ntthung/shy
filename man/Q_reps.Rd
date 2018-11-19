@@ -36,7 +36,7 @@ Q_reps(Q.obs, method, order, X.obs = NULL, X.reps = NULL,
 \item{log-std}{First take log-transform, then do standardization.}
 }}
 
-\item{X.trans}{Same as \code{Q.trans} but applied on \code{X.obs}.}
+\item{X.trans}{Same as \code{Q.trans} but applied on \code{X.obs} and \code{X.reps}.}
 }
 \value{
 A data.table with the following collumns: year, month, X (if \code{method == 'armax'}) and Q.

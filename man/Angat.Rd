@@ -11,7 +11,7 @@
 \item{Q}{Inflow to the reservoir in cubic meter per second}
 }}
 \source{
-\link{http://202.90.134.59/riverflow/01_avg30yr.aspx}
+\url{http://202.90.134.59/riverflow/01_avg30yr.aspx}
 }
 \usage{
 Angat

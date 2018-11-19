@@ -6,6 +6,9 @@
 \usage{
 one_ONI_rep(num.years)
 }
+\arguments{
+\item{num.years}{Number of years to simulate.}
+}
 \value{
 A vector of the ONI time series.
 }
