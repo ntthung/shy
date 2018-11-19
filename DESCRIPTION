@@ -2,6 +2,7 @@ Package: shy
 Type: Package
 Title: Stochastic Hydrology
 Version: 0.0.0.9000
+Date: 2018-11-19
 Authors@R: c(
     person("Hung", "Nguyen", email = "ntthung@gmail.com", role = c("aut", "cre"))
     )
@@ -10,7 +11,7 @@ License: GPL (>= 3)
 Depends:
     R (>= 3.1)
 Imports:
-    dplyr,
+    dplyr, 
     data.table,
     forecast,
     ggplot2,

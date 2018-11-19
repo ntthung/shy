@@ -1,0 +1,19 @@
+citHeader("To cite shy in publications use:")
+
+year <- sub(".*(2[[:digit:]]{3})-.*", "\\1", meta$Date)
+vers <- paste("R package version", meta$Version)
+
+citEntry(entry = "manual",
+	title = "shy: Stochastic Hydrology",
+	author = personList(person("Hung Nguyen", email="ntthung@gmail.com", role=c("aut","cre", "cph"))),
+	year = year,
+	note = vers,
+	url = "https://github.com/ntthung/shy",
+
+	textVersion = paste0("Hung Nguyen (", year, "). ",
+        "shy: Stochastic Hydrology. ",
+        vers,
+        ". URL https://github.com/ntthung/shy"
+        ))
+
+citFooter("I have invested an important amount of time and effort in creating shy, please cite it if you use it!")
