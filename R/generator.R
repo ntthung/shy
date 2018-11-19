@@ -39,7 +39,7 @@ ONI_reps <- function(ONI.obs, years = NULL, num.reps = 100, trim = 2, var.cor = 
     if (is.null(years)) years <- unique(ONI.obs$year)
     num.years <- length(years)
     # This returns a matrix, one row for each time step, one column for each replicate
-    reps <- stats::replicate(num.reps, one_ONI_rep(num.years))
+    reps <- replicate(num.reps, one_ONI_rep(num.years))
     # Trim or variance correction if necessary
     if (var.cor) {
         hist.sd <- sd(ONI.obs$ONI)

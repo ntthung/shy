@@ -5,12 +5,13 @@ Version: 0.0.0.9000
 Authors@R: c(
     person("Hung", "Nguyen", email = "ntthung@gmail.com", role = c("aut", "cre"))
     )
-Description: Utility functions for stochastic hydrological analyses
+Description: Utility functions for stochastic hydrological analyses.
 License: GPL (>= 3)
 Depends:
     R (>= 3.1)
 Imports:
     dplyr,
+    data.table,
     forecast,
     ggplot2,
     magrittr,
