@@ -4,8 +4,8 @@
 \alias{ONI_reps}
 \title{ONI replicates}
 \usage{
-ONI_reps(ONI.obs, years = NULL, num.reps = 100, trim = NULL,
-  var.cor = FALSE)
+ONI_reps(ONI.obs, years = NULL, num.reps = 100, trim = 2,
+  var.cor = TRUE)
 }
 \arguments{
 \item{ONI.obs}{A data frame of observed ONI with three columns (year, month, ONI). By default, the replicates will have the same years as ONI.obs, unless \code{years} is provided.}
@@ -14,9 +14,9 @@ ONI_reps(ONI.obs, years = NULL, num.reps = 100, trim = NULL,
 
 \item{num.reps}{Number of replicates to be generated. Default is 100.}
 
-\item{var.cor}{Whether variance correction is performed. Setting \code{var.cor = TRUE} will ignore \code{norm.factor}.}
+\item{trim}{Used to cut off values that are too high or too low. Values that are more than \code{trim * max(abs(obs))} will be set to \code{max(abs(obs))}. Default is 2. Supply \code{trim = NULL} if you don't want trimming.}
 
-\item{norm.factor}{Used to cut off values that are too high or too low. Values that are more than \code{norm.factor * max(abs(obs))} will be set to \code{max(abs(obs))}. Default is 2.}
+\item{var.cor}{Whether variance correction is performed. Setting \code{var.cor = TRUE} will ignore \code{trim}.}
 }
 \value{
 A data.table of 4 columns (rep, year, month, ONI).

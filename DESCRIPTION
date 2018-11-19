@@ -6,7 +6,7 @@ Authors@R: c(
     person("Hung", "Nguyen", email = "ntthung@gmail.com", role = c("aut", "cre"))
     )
 Description: Utility functions for stochastic hydrological analyses
-License: What license is it under?
+License: GPL (>= 3)
 Depends:
     R (>= 3.1)
 Imports:
@@ -14,7 +14,8 @@ Imports:
     dplyr,
     forecast,
     ggplot2,
-    magrittr
+    magrittr,
+    stats
 Encoding: UTF-8
 LazyData: true
 Roxygen: list(markdown = TRUE)

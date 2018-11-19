@@ -5,9 +5,10 @@
 #' @name shy
 #' @import magrittr
 #' @import data.table
+#' @import ggplot2
 #' @importFrom dplyr group_by summarise mutate bind_rows filter ungroup
 #' @importFrom forecast Arima
-#' @import ggplot2
+#' @importFrom stats rnorm sd simulate
 #' @keywords internal
 "_PACKAGE"
 NULL

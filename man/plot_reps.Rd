@@ -11,7 +11,7 @@ plot_reps(reps, obs, var.name)
 
 \item{obs}{Observed time series}
 
-\item{var.anme}{Name of the variable column to be plotted, must be the same in reps and obs}
+\item{var.name}{Name of the variable column to be plotted, must be the same in reps and obs}
 }
 \value{
 A ggplot2 plot
