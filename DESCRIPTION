@@ -14,7 +14,7 @@ Imports:
     dplyr, 
     data.table,
     forecast,
-    ggplot2,
+    ggplot2 (>= 3.1.0),
     magrittr,
     stats
 Encoding: UTF-8
