@@ -84,36 +84,38 @@ Q_reps <- function(Q.obs, method, order,
                    X.obs = NULL, X.reps = NULL, X.name = NULL, X.lag = 0,
                    years = NULL, num.reps = 100, trim = 2, Q.trans = 'log-std', X.trans = 'std') {
 
+    Q.obs <- as.data.table(Q.obs)
+
     # Transform flow
     Q.log <- length(grep('log', Q.trans)) > 0
     Q.std <- length(grep('std', Q.trans)) > 0
-    Q <- copy(Q.obs)
-    Q[, Q2 := {if (Q.log) log(Q) else Q}
-      ][, Q3 := {if (Q.std) (Q2 - mean(Q2)) / sd(Q2) else Q2}, by = month]
+    Q.obs[, Q2 := if (Q.log) log(Q) else Q
+      ][, Q3 := if (Q.std) (Q2 - mean(Q2)) / sd(Q2) else Q2, by = month]
 
     if (method == 'arma') {
-        if (is.null(years)) years <- unique(Q.obs[, year])
+        if (is.null(years)) years <- unique(Q.obs$year)
         num.years <- length(years)
-        model <- forecast::Arima(Q[, Q3], order = order)
+        model <- forecast::Arima(Q.obs$Q3, order = order)
         Q.sim <- data.table(rep = rep(1:num.reps, each = 12*num.years),
                             year = rep(years, each = 12) %>% rep(num.reps),
                             month = rep(1:12, num.reps),
                             Qsim = c(replicate(num.reps, as.numeric(stats::simulate(model))))) %>%
-            merge(Q, by = c('year', 'month'))
+            merge(Q.obs, by = c('year', 'month'))
     } else if (method == 'armax') {
-        X <- copy(X.obs)
-        X.reps <- copy(X.reps)
+        X.obs <- as.data.table(X.obs)
+        X.reps <- as.data.table(X.reps)
         if (is.null(X.name)) X.name <- colnames(X.reps)[4]
-        setnames(X, old = X.name, new = 'X')
+        setnames(X.obs, old = X.name, new = 'X')
         setnames(X.reps, old = X.name, new = 'X')
         if (length(grep('std', X.trans)) > 0) {
-            X[, X := (X - mean(X)) / sd(X), by = month]
+            X.obs[, X := (X - mean(X)) / sd(X), by = month]
             X.reps[, X := (X - mean(X)) / sd(X), by = month]
         }
-        dt <- merge(Q, X[, .(year, month, X = shift(X, X.lag))], by = c('year', 'month'))
-        model <- forecast::Arima(dt[, Q3], order = order, xreg = dt[, X])
-        X.reps[year %in% dt[, year], Qsim := as.numeric(stats::simulate(model, xreg = X)), by = rep][, X := NULL]
-        Q.sim <- merge(X.reps, Q, by = c('year', 'month'), all.X = TRUE)
+        dt <- merge(Q.obs, X.obs[, .(year, month, X = shift(X, X.lag))], by = c('year', 'month'))
+        model <- forecast::Arima(dt$Q3, order = order, xreg = dt$X)
+        X.reps[year %in% dt$year, Qsim := as.numeric(stats::simulate(model, xreg = X)), by = rep
+               ][, X := NULL]
+        Q.sim <- merge(X.reps, Q.obs, by = c('year', 'month'), all.X = TRUE)
 
     } else warning("Only arma and armax methods are supported at the moment.")
 
@@ -124,7 +126,7 @@ Q_reps <- function(Q.obs, method, order,
     Q.sim[, c('Q', 'Q2', 'Q3') := NULL]
     setnames(Q.sim, 'Qsim', 'Q')
     # Trim
-    if (!is.null(trim)) Q.sim[Q > trim*max(Q.obs[, Q]), Q := trim*max(Q.obs[, Q])]
+    if (!is.null(trim)) Q.sim[Q > trim*max(Q.obs$Q), Q := trim*max(Q.obs$Q)]
 
     Q.sim[]
 
